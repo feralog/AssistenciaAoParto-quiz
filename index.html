@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Assistência ao Parto</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; min-height: 100vh; }
+  header { background: #1e3a5f; color: white; padding: 20px 30px; text-align: center; }
+  header h1 { font-size: 22px; margin-bottom: 4px; }
+  header p { font-size: 13px; opacity: 0.8; }
+  .quiz-container { max-width: 800px; margin: 30px auto; padding: 0 16px 60px; }
+  #startScreen { background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  #startScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 12px; }
+  #startScreen p { font-size: 14px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+  .progress-bar-bg { background: #dde3ea; border-radius: 8px; height: 8px; margin-bottom: 8px; }
+  .progress-bar-fill { background: #2563eb; height: 8px; border-radius: 8px; transition: width 0.4s ease; }
+  .progress-label { font-size: 12px; color: #666; margin-bottom: 20px; }
+  .question-card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .question-number { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2563eb; letter-spacing: 1px; margin-bottom: 10px; }
+  .question-text { font-size: 15px; line-height: 1.65; color: #1a1a1a; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn { background: #f7f9fc; border: 2px solid #dde3ea; border-radius: 8px; padding: 12px 16px; text-align: left; font-size: 14px; cursor: pointer; transition: background 0.15s, border-color 0.15s; line-height: 1.5; }
+  .option-btn:hover:not(:disabled) { background: #e8f0fe; border-color: #2563eb; }
+  .option-btn.correct { background: #d1fae5; border-color: #16a34a; color: #166534; }
+  .option-btn.wrong { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+  .option-btn:disabled { cursor: default; }
+  .explanation { display: none; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 14px 16px; margin-top: 14px; font-size: 13px; line-height: 1.6; color: #166534; }
+  .explanation.show { display: block; }
+  .btn-next { display: none; margin-top: 18px; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-next:hover { background: #1d4ed8; }
+  .btn-next.show { display: inline-block; }
+  .btn-primary { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 14px 36px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: #1d4ed8; }
+  #resultScreen { display: none; background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #1e3a5f; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .score-circle .score-num { font-size: 32px; font-weight: 700; }
+  .score-circle .score-denom { font-size: 13px; opacity: 0.8; }
+  #resultScreen h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 10px; }
+  #resultScreen p { font-size: 14px; color: #555; margin-bottom: 24px; }
+  .stats-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-box { background: #f7f9fc; border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 90px; }
+  .stat-box .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-box .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+  .stat-box.green .stat-val { color: #16a34a; }
+  .stat-box.red .stat-val { color: #dc2626; }
+  .stat-box.blue .stat-val { color: #2563eb; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Assistência ao Parto</h1>
+  <p>Obstetrícia — Saúde da Mulher</p>
+</header>
+<div class="quiz-container">
+  <div id="startScreen">
+    <h2>Quiz de Revisão</h2>
+    <p>20 questões cobrindo períodos do parto, fase latente/ativa, condutas recomendadas, mecônio, episiotomia, secundamento, 4 T's da HPP e escalonamento de intervenções.<br><br>Responda cada questão e veja a explicação antes de avançar.</p>
+    <button class="btn-primary" onclick="startQuiz()">Começar Quiz</button>
+  </div>
+  <div id="quizArea" style="display:none;">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">Questão 0 de 20</div>
+    <div class="question-card" id="questionCard">
+      <div class="question-number" id="questionNumber"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()">Próxima questão →</button>
+    </div>
+  </div>
+  <div id="resultScreen">
+    <div class="score-circle">
+      <span class="score-num" id="scoreFinal">0</span>
+      <span class="score-denom" id="scoreDenom">de 20</span>
+    </div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultMsg"></p>
+    <div class="stats-row">
+      <div class="stat-box green"><div class="stat-val" id="statCorrect">0</div><div class="stat-lbl">Acertos</div></div>
+      <div class="stat-box red"><div class="stat-val" id="statWrong">0</div><div class="stat-lbl">Erros</div></div>
+      <div class="stat-box blue"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Aproveitamento</div></div>
+    </div>
+    <button class="btn-primary" onclick="restartQuiz()">Refazer Quiz</button>
+  </div>
+</div>
+<script>
+const rawQuestions = [
+  {
+    question: "Segundo a OMS, qual é a definição de parto normal?",
+    options: [
+      "Parto entre 37-42 semanas, início espontâneo, risco habitual, apresentação cefálica fletida, resultando em mãe e RN em boas condições",
+      "Qualquer parto vaginal realizado em ambiente hospitalar com equipe obstétrica",
+      "Parto entre 34-40 semanas sem uso de ocitocina ou analgesia peridural",
+      "Parto com apresentação cefálica e sem instrumentação, independente da idade gestacional"
+    ],
+    correctIndex: 0,
+    explanation: "A OMS define parto normal como aquele que ocorre entre 37–42 semanas, com início espontâneo do trabalho de parto, em pacientes de risco habitual, feto em apresentação cefálica fletida, sem intercorrências — resultando em mãe e recém-nascido em boas condições. Não exige ausência de analgesia ou ocitocina."
+  },
+  {
+    question: "A fase ativa do trabalho de parto inicia-se com qual dilatação cervical, segundo as diretrizes atuais da OMS?",
+    options: [
+      "5 cm de dilatação",
+      "3 cm de dilatação",
+      "4 cm de dilatação",
+      "8 cm de dilatação"
+    ],
+    correctIndex: 0,
+    explanation: "A OMS define o início da fase ativa a partir de 5 cm de dilatação. A fase latente vai de 1 a 4 cm. A internação deve ocorrer na fase ativa (5 cm). O partograma, porém, é aberto quando a paciente atinge 4 cm (critério atual)."
+  },
+  {
+    question: "Com qual dilatação cervical deve-se abrir o partograma e internar a paciente?",
+    options: [
+      "Partograma abre aos 4 cm; internação na fase ativa (5 cm)",
+      "Partograma e internação ambos aos 3 cm de dilatação",
+      "Partograma abre aos 2 cm para monitorar toda a fase latente",
+      "Internação imediata ao diagnóstico de trabalho de parto, independente da dilatação"
+    ],
+    correctIndex: 0,
+    explanation: "O partograma é iniciado quando a parturiente apresenta dilatação cervical de 4 cm (critério da versão atual da OMS). A internação deve ocorrer na fase ativa, a partir de 5 cm. Abrir o partograma na fase latente implicaria intervenções desnecessárias."
+  },
+  {
+    question: "Uma nulípara em fase latente há 18 horas, com boa vitalidade fetal. Qual é a conduta correta?",
+    options: [
+      "Manter acompanhamento — fase latente prolongada não é indicação de cesariana se houver progressão",
+      "Indicar cesariana imediatamente, pois o limite de fase latente para nulíparas é 12 horas",
+      "Realizar amniotomia e iniciar ocitocina para acelerar o parto",
+      "Indicar analgesia peridural obrigatória para estimular a progressão"
+    ],
+    correctIndex: 0,
+    explanation: "Fase latente prolongada (>20h em nulíparas; >14h em multíparas) não é indicação de cesariana. Trabalho de parto lento, porém progressivo, e com boas condições maternas e fetais também não indica cesárea. A cesariana é indicada por parada de progressão com critérios de Zhang, sofrimento fetal ou indicações absolutas."
+  },
+  {
+    question: "Quais procedimentos NÃO devem ser realizados durante a fase latente do trabalho de parto?",
+    options: [
+      "Tricotomia, enteróclise, dieta zero e hidratação venosa de rotina",
+      "Ausculta fetal, toque vaginal com luvas e posicionamento livre",
+      "Presença de acompanhante, deambulação e analgesia",
+      "Monitoração da dilatação cervical e contração uterina"
+    ],
+    correctIndex: 0,
+    explanation: "Não devem ser realizados na fase latente: tricotomia (raspagem de pelos), enteróclise (lavagem intestinal), dieta zero (pode comer e beber) e hidratação venosa de rotina. Devem ser permitidos: deambulação, escolha de posição, presença de acompanhante, toque vaginal e monitoração do bem-estar fetal."
+  },
+  {
+    question: "No segundo período do parto, com qual frequência deve ser monitorada a frequência cardíaca fetal?",
+    options: [
+      "A cada 5 minutos, antes, durante e após cada contração",
+      "A cada 15 minutos, apenas entre as contrações",
+      "A cada 30 minutos, ou continuamente se houver sofrimento",
+      "Apenas quando a paciente referir diminuição dos movimentos fetais"
+    ],
+    correctIndex: 0,
+    explanation: "No 2º período do parto (expulsivo), as principais complicações ocorrem nessa fase — por isso o BCF deve ser auscultado a cada 5 minutos, antes, durante e depois de cada contração, para detecção precoce de sofrimento fetal. No 1º período (fase ativa), o ACOG recomenda a cada 30 minutos em gestações de risco habitual."
+  },
+  {
+    question: "Qual é a conduta correta diante de mecônio no líquido amniótico sem evidência de sofrimento fetal?",
+    options: [
+      "Manter assistência ao parto normal — mecônio isolado não é indicação de cesariana",
+      "Indicar cesariana imediatamente, pois o mecônio sempre indica sofrimento fetal",
+      "Realizar amniotomia imediata para avaliar a quantidade e espessura do mecônio",
+      "Interromper todos os analgésicos e aguardar resolução espontânea do mecônio"
+    ],
+    correctIndex: 0,
+    explanation: "Mecônio no líquido amniótico é indicação de cesariana SOMENTE se houver sofrimento fetal diagnosticado (alterações do BCF). A presença isolada de mecônio, sem sofrimento fetal, não é indicação de cesárea — deve-se manter assistência ao parto vaginal com monitoração fetal rigorosa."
+  },
+  {
+    question: "Qual é o tempo máximo para o 2º período do parto em uma nulípara com analgesia peridural?",
+    options: [
+      "4 horas",
+      "2 horas",
+      "3 horas",
+      "5 horas"
+    ],
+    correctIndex: 0,
+    explanation: "Nulípara com analgesia peridural: limite de 4 horas para o 2º período. Sem analgesia: 3 horas. Multípara com analgesia: 3 horas; sem analgesia: 2 horas. Ultrapassados esses limites sem progressão de descida, é necessário intervir (fórcipe ou cesariana)."
+  },
+  {
+    question: "A episiotomia deve ser realizada:",
+    options: [
+      "De forma seletiva, apenas em casos específicos com indicação clínica",
+      "Rotineiramente em todas as nulíparas para prevenir lacerações",
+      "Apenas na apresentação pélvica ou em partos instrumentalizados",
+      "Sempre que a paciente solicitar, como parte do parto humanizado"
+    ],
+    correctIndex: 0,
+    explanation: "A episiotomia NÃO deve ser realizada de rotina. É um procedimento cirúrgico seletivo — indicado apenas em situações específicas como sofrimento fetal iminente, distocia de ombro, ou quando necessário para facilitar extração. O uso rotineiro está associado a mais complicações do que benefícios."
+  },
+  {
+    question: "Qual mecanismo de dequitação da placenta cursa com sangramento ANTES da saída da placenta?",
+    options: [
+      "Baudelocque-Duncan",
+      "Baudelocque-Schultze",
+      "Manobra de Jacob-Dublin",
+      "Brandt-Andrews"
+    ],
+    correctIndex: 0,
+    explanation: "Baudelocque-Duncan: a borda placentária se descola primeiro, com sangramento ANTES da saída da placenta. Baudelocque-Schultze: o centro placentário se descola primeiro (face fetal nasce primeiro), com sangramento APÓS a saída. Brandt-Andrews é uma manobra de tração do cordão para auxiliar o secundamento; Jacob-Dublin é uma manobra de torção para facilitar a extração das membranas."
+  },
+  {
+    question: "Qual é o tempo máximo para a expulsão da placenta no 3º período?",
+    options: [
+      "30 minutos",
+      "15 minutos",
+      "1 hora",
+      "45 minutos"
+    ],
+    correctIndex: 0,
+    explanation: "O 3º período (secundamento) tem tempo variável, porém a placenta deve ser expulsa em até 30 minutos. Se não ocorrer, fala-se em secundamento prolongado ou retenção placentária, que requer intervenção ativa (tração controlada do cordão, exploração manual da cavidade uterina ou curetagem)."
+  },
+  {
+    question: "Qual é a principal causa fisiológica de hemostasia uterina no 4º período do parto?",
+    options: [
+      "Miotamponagem — contração da musculatura uterina que comprime os vasos",
+      "Trombotamponagem — formação de coágulo nos vasos abertos",
+      "Indiferença miouterina — relaxamento progressivo para redistribuição do fluxo sanguíneo",
+      "Contração uterina fixa — espasmo muscular contínuo que fecha os vasos"
+    ],
+    correctIndex: 0,
+    explanation: "A miotamponagem é o principal mecanismo hemostático fisiológico no pós-parto: a contração da musculatura uterina (globo de segurança de Baudelocque) comprime os vasos e interrompe o sangramento. A trombotamponagem (coágulo) é o mecanismo secundário. A indiferença miouterina (útero que não contrai) é uma complicação grave — atonia uterina."
+  },
+  {
+    question: "Um paciente obstétrica apresenta útero flácido, sangramento abundante e queda da pressão arterial na primeira hora pós-parto. Qual é a causa mais provável pelos 4 T's da HPP?",
+    options: [
+      "Tônus — atonia uterina (incapacidade de contração do útero)",
+      "Trauma — laceração cervical oculta",
+      "Tecido — retenção de fragmentos placentários",
+      "Trombose — coagulopatia de consumo"
+    ],
+    correctIndex: 0,
+    explanation: "Útero flácido (amolecido, sem contração) indica atonia uterina — correspondente ao 'T de Tônus' nos 4 T's. É a causa mais comum de hemorragia pós-parto (>70% dos casos). O manejo inclui massagem uterina, ocitocina, misoprostol, e, se necessário, tamponamento e cirurgia. Retenção placentária (Tecido) cursa com útero de aspecto anormal; coagulopatia (Trombose) é causa rara."
+  },
+  {
+    question: "Quando deve ser administrada a ocitocina profilática para prevenção de hemorragia pós-parto?",
+    options: [
+      "Após o desprendimento do ombro anterior do feto — 10 UI IM",
+      "Antes do nascimento, para estimular as contrações uterinas",
+      "Apenas após a expulsão completa da placenta",
+      "Somente se houver sangramento acima de 500 mL no parto vaginal"
+    ],
+    correctIndex: 0,
+    explanation: "A ocitocina profilática (10 UI IM) deve ser administrada após o desprendimento do ombro fetal — não antes (risco de sofrimento fetal por hipertonia) e não depois (ganhar tempo para contrair o útero e reduzir sangramento). Esta é a recomendação do FEBRASGO e da OMS para manejo ativo do 3º período."
+  },
+  {
+    question: "Qual é a perda sanguínea considerada normal em um parto vaginal?",
+    options: [
+      "Até 500 mL",
+      "Até 250 mL",
+      "Até 1.000 mL",
+      "Até 750 mL"
+    ],
+    correctIndex: 0,
+    explanation: "A perda sanguínea normal é de até 500 mL no parto vaginal e até 1.000 mL na cesariana. Acima desses valores define-se hemorragia pós-parto. Atenção: alguns autores mais recentes usam 1.000 mL como corte universal (independentemente da via), mas a referência clássica é 500/1000 mL."
+  },
+  {
+    question: "Qual é a ordem correta de escalonamento nas intervenções diante de parada de progressão do trabalho de parto?",
+    options: [
+      "Amniotomia → ocitocina → fórcipe → cesariana",
+      "Ocitocina → amniotomia → cesariana → fórcipe",
+      "Fórcipe → ocitocina → amniotomia → cesariana",
+      "Cesariana → fórcipe → ocitocina → amniotomia"
+    ],
+    correctIndex: 0,
+    explanation: "O escalonamento vai do menos ao mais invasivo: amniotomia (romper a bolsa — estimula contrações) → ocitocina (se contrações inadequadas) → fórcipe (se dilatação completa e apresentação acessível) → cesariana (se fracasso das medidas anteriores ou indicação absoluta). A vitalidade fetal é quem determina a urgência e a escolha."
+  },
+  {
+    question: "Em qual das seguintes situações existe indicação ABSOLUTA de cesariana?",
+    options: [
+      "Apresentação córmica (transversa)",
+      "Fase latente com duração de 22 horas em nulípara",
+      "Mecônio espesso no líquido amniótico sem alterações do BCF",
+      "Solicitação materna sem causa obstétrica identificada"
+    ],
+    correctIndex: 0,
+    explanation: "Apresentação córmica (feto transverso) é indicação absoluta de cesariana — não há como o bebê passar pelo canal de parto. Outras indicações absolutas: prolapso de cordão umbilical, placenta prévia total. Fase latente longa não é indicação. Mecônio isolado sem sofrimento fetal não é indicação. Solicitação materna isolada não é indicação absoluta pelas diretrizes brasileiras."
+  },
+  {
+    question: "Qual é a recomendação atual para o clampeamento do cordão umbilical?",
+    options: [
+      "Clampeamento oportuno em 60 segundos após o nascimento",
+      "Clampeamento imediato ao nascimento para evitar policitemia",
+      "Clampeamento após 5 minutos para maximizar a transfusão placentária",
+      "Clampeamento ao parar a pulsação do cordão, independente do tempo"
+    ],
+    correctIndex: 0,
+    explanation: "O clampeamento oportuno (delayed cord clamping) é recomendado em 60 segundos após o nascimento. Isso permite transferência de sangue placentário para o RN, aumentando estoques de ferro e reduzindo anemia. O clampeamento imediato está associado a maiores taxas de anemia. O tempo de 60 segundos é uma balança entre benefícios e riscos (policitemia leve)."
+  },
+  {
+    question: "A Manobra de Jacob-Dublin é utilizada em qual período do parto e com qual finalidade?",
+    options: [
+      "3º período — torção da placenta para facilitar a extração completa das membranas",
+      "2º período — proteção do períneo durante a saída da cabeça fetal",
+      "1º período — mobilização da parturiente para estimular a descida da apresentação",
+      "4º período — massagem uterina para estimular a contração e hemostasia"
+    ],
+    correctIndex: 0,
+    explanation: "A Manobra de Jacob-Dublin é realizada no 3º período (secundamento): consiste em torcer suavemente a placenta após sua saída, criando um fuso com as membranas e facilitando a extração completa. Já a Manobra de Ritgen é uma proteção do períneo no 2º período; Brandt-Andrews é tração controlada do cordão."
+  },
+  {
+    question: "Qual é a posição de parto MENOS recomendada pela literatura obstétrica atual?",
+    options: [
+      "Litotomia — diminui a amplitude do sacro e é menos confortável",
+      "Cócoras — aumenta o risco de lacerações perineais",
+      "Lateral esquerda — comprime a veia cava e reduz o retorno venoso",
+      "Semissentada — dificulta o desprendimento do ombro posterior"
+    ],
+    correctIndex: 0,
+    explanation: "A posição de litotomia (decúbito dorsal com pernas elevadas em estribos) é a menos recomendada atualmente: diminui a amplitude pélvica ao comprimir o sacro e não é a mais confortável para a parturiente. As diretrizes recomendam que a mulher escolha a posição em que consegue exercer maior força de expulsão e que seja mais confortável — cócoras, lateral, semissentada ou de quatro apoios são mais favoráveis biomecânica e fisiologicamente."
+  }
+];
+
+function shuffleQuestion(q) {
+  const correctText = q.options[q.correctIndex];
+  const shuffled = [...q.options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return { ...q, options: shuffled, correctIndex: shuffled.indexOf(correctText) };
+}
+
+let questions = [], current = 0, score = 0;
+
+function startQuiz() {
+  questions = rawQuestions.map(shuffleQuestion).sort(() => Math.random() - 0.5);
+  current = 0; score = 0;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[current], total = questions.length;
+  document.getElementById('progressBar').style.width = ((current / total) * 100) + '%';
+  document.getElementById('progressLabel').textContent = `Questão ${current + 1} de ${total}`;
+  document.getElementById('questionNumber').textContent = `Questão ${current + 1}`;
+  document.getElementById('questionText').textContent = q.question;
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn'; btn.textContent = opt;
+    btn.onclick = () => selectAnswer(idx);
+    container.appendChild(btn);
+  });
+  document.getElementById('explanation').className = 'explanation';
+  document.getElementById('explanation').textContent = '';
+  document.getElementById('btnNext').className = 'btn-next';
+}
+
+function selectAnswer(idx) {
+  const q = questions[current];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  if (idx === q.correctIndex) { btns[idx].classList.add('correct'); score++; }
+  else { btns[idx].classList.add('wrong'); btns[q.correctIndex].classList.add('correct'); }
+  const exp = document.getElementById('explanation');
+  exp.textContent = q.explanation; exp.className = 'explanation show';
+  document.getElementById('btnNext').className = 'btn-next show';
+  document.getElementById('btnNext').textContent = current + 1 < questions.length ? 'Próxima questão →' : 'Ver resultado';
+}
+
+function nextQuestion() {
+  current++;
+  if (current < questions.length) showQuestion(); else showResult();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  const rs = document.getElementById('resultScreen'); rs.style.display = 'block';
+  const total = questions.length, pct = Math.round((score / total) * 100);
+  document.getElementById('scoreFinal').textContent = score;
+  document.getElementById('scoreDenom').textContent = `de ${total}`;
+  document.getElementById('statCorrect').textContent = score;
+  document.getElementById('statWrong').textContent = total - score;
+  document.getElementById('statPct').textContent = pct + '%';
+  let title, msg;
+  if (pct >= 80) { title = 'Excelente!'; msg = 'Ótimo domínio do conteúdo de Assistência ao Parto. Continue assim!'; }
+  else if (pct >= 60) { title = 'Bom resultado!'; msg = 'Você está no caminho certo. Revise os pontos errados no relatório.'; }
+  else { title = 'Continue estudando!'; msg = 'Revise o relatório de Assistência ao Parto com atenção antes de refazer o quiz.'; }
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function restartQuiz() {
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+}
+</script>
+</body>
+</html>
